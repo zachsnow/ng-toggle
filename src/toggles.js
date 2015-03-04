@@ -1,0 +1,247 @@
+(function(){
+  var module = angular.module('toggles', []);
+  
+  module.factory('toggles', [
+    '$document',
+    '$rootScope',
+    function($document, $rootScope){
+      // Only un-toggle auto-close toggles.
+      $document.on('click', function(e){
+        return;
+        var $target = angular.element(e.target);
+
+        // Don't let clicks within toggles or toggleds to autoclose.
+        var $toggles = $target.closest('[ng-toggle], [ng-toggled], [ng-toggled-show]');
+        if($toggles.length){
+          return;
+        }
+        
+        // Also don't let clicks on things that aren't in the DOM autoclose.
+        // This fixes issues where you click on something, and its click handler
+        // fires before the click reaches the <html /> and removes the thing
+        // you clicked on (like starting to edit something, where the edit button
+        // changes into the form). When that happens, we can no longer determine
+        // that you clicked in a toggle, so we err on the side of caution.
+        if(!$.contains($document[0].documentElement, e.target)){
+          return;
+        }
+
+        // Close all auto-close toggles.
+        $rootScope.$apply(function(){
+          var toggle;
+          for(var key in service.toggles){
+            toggle = service.toggles[key];
+            if(toggle.autoClose){
+              toggle.state = false;
+            }
+          }
+        });
+      });
+      
+      var service = {
+        toggles: {},
+        
+        create: function(name, options){
+          // Create toggle if necessary; this allows us to put the ng-toggled before the ng-toggle
+          // in the DOM, or create multiple ng-toggles for a single ng-toggled and vice versa.
+          var toggle = service.toggles[name];
+          if(toggle){
+            toggle.count += 1;
+            return;
+          }
+
+          toggle = {
+            autoClose: options.autoClose || false,
+            state: options.defaultState || false,
+            group: options.group || null,
+            count: 1
+          };
+          service.toggles[name] = toggle;
+          
+          // Watch this toggle's state and close toggles in the same group when it is opened;
+          // only do it when the toggle is in a group.
+          if(toggle.group){
+            toggle.deregisterGroupWatch = $rootScope.$watch(function toggleGroupWatch(){
+              return toggle.state;
+            }, function toggleGroupWatchHandler(state){
+              var otherToggle;
+              if(!state){
+                return;
+              }
+              for(var key in service.toggles){
+                otherToggle = service.toggles[key];
+                if(toggle !== otherToggle && toggle.group === otherToggle.group){
+                  otherToggle.state = false;
+                }
+              };
+            });
+          }
+        },
+        
+        destroy: function(name){
+          var toggle = service.toggles[name];
+          if(!toggle){
+            console.warn('ng-toggle: destroying invalid toggle', name);
+            return;
+          }
+          toggle.count -= 1;
+          if(!toggle.count){
+            toggle.deregisterGroupWatch && toggle.deregisterGroupWatch(); 
+            delete service.toggles[name];
+          }
+        },
+        
+        toggle: function(name, value){
+          var toggle = service.toggles[name];
+          if(!toggle){
+            console.warn('ng-toggle: toggling invalid toggle', name);
+            return;
+          }
+
+          // If you pass a value use that as the new state, otherwise
+          // just invert the current state.
+          value = arguments.length > 1 ? !!value : !toggle.state;
+          toggle.state = value;
+        },
+        
+        state: function(name){
+          var toggle = service.toggles[name];
+          if(!toggle){
+            return false;
+          }
+          return toggle.state;
+        }
+      };
+      
+      return service;
+    }
+  ]);
+
+  module.directive('ngToggle', [
+    '$interpolate',
+    '$parse',
+    '$rootScope',
+    'toggles',
+    function($interpolate, $parse, $rootScope, toggles){
+      var isSetFn = function(attrs, name){
+        if(!attrs[name]){
+          return function(){
+            return attrs[name] === '';
+          };
+        }
+        else {
+          return $parse(attrs[name])
+        }
+      };
+
+      return {
+        restrict: 'A',
+        compile: function($element, $attrs){
+          var nameFn = $interpolate($attrs.ngToggle || '');
+          var defaultFn = $parse($attrs.ngToggleDefault);
+          var groupFn = $interpolate($attrs.ngToggleGroup || '');
+          var autoCloseFn = isSetFn($attrs, 'ngToggleAutoClose');
+
+
+          return function(scope, element, attrs){
+            var name = nameFn(scope);
+            if(!name){
+              throw new Error('ng-toggle: invalid toggle name');
+            }
+
+            var defaultState = defaultFn(scope) || false;
+            var group = groupFn(scope) || '';
+            var autoClose = autoCloseFn(scope);
+
+            // Create the toggle.
+            toggles.create(name, {
+              autoClose: autoClose,
+              defaultState: defaultState,
+              group: group
+            });
+
+            // Bind the event to toggle.
+            element.on('click', function(e){
+              scope.$apply(function(){
+                toggles.toggle(name);
+              });
+            });
+
+            // Get stylin'.
+            scope.$watch(function(){
+              return toggles.state(name);
+            }, function(state){
+              element.toggleClass('toggled', state);
+            });
+
+            scope.$on('$destroy', function(){
+              toggles.destroy(name);
+            });
+          };
+        }
+      };
+    }
+  ]);
+
+  module.directive('ngToggled', [
+    '$animate',
+    '$interpolate',
+    'toggles',
+    function($animate, $interpolate, toggles){
+      return {
+        restrict: 'A',
+        priority: 1000,
+        transclude: true,
+        compile: function($element, $attrs, $transclude){
+          var nameFn = $interpolate($attrs.ngToggled);
+
+          return function(scope, element, attrs, ctrl){
+            var childElement, childScope;
+            var name = nameFn(scope);
+            var toggleState = function(){
+              return toggles.state(name);
+            };
+
+            scope.$watch(toggleState, function ngToggledWatch(state){
+              if(childElement){
+                $animate.leave(childElement);
+                childElement = undefined;
+              }
+              if(childScope){
+                childScope.$destroy();
+                childScope = undefined;
+              }
+
+              if(state){
+                childScope = scope.$new();
+                $transclude(childScope, function(clone){
+                  childElement = clone;
+                  $animate.enter(clone, element.parent(), element);
+                });
+              }
+            });
+          };
+        }
+      };
+    }
+  ]);
+
+  module.directive('ngToggledShow', [
+    'toggles',
+    function(toggles){
+      return {
+        compile: function($element, $attrs){
+          var nameFn = $interpolate($attrs.ngToggled);
+          return function(scope, element){
+            var name = nameFn(scope);
+            scope.$watch(function ngToggledShowWatch(){
+              return toggles.state(name);
+            }, function(toggled){
+              element.toggleClass('ng-hide', !toggled);
+            });
+          };
+        }
+      };
+    }
+  ]);
+})();
