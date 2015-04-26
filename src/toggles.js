@@ -7,13 +7,15 @@
     function($document, $rootScope){
       // Only un-toggle auto-close toggles.
       $document.on('click', function(e){
-        return;
         var $target = angular.element(e.target);
 
         // Don't let clicks within toggles or toggleds to autoclose.
-        var $toggles = $target.closest('[ng-toggle], [ng-toggled], [ng-toggled-show]');
-        if($toggles.length){
-          return;
+        var $node = $target;
+        while($node.length){
+          if($node.attr('ng-toggle') || $node.attr('ng-toggled') || $node.attr('ng-toggled-show')){
+            return;
+          }
+          $node = angular.element($node.parent());
         }
         
         // Also don't let clicks on things that aren't in the DOM autoclose.
@@ -22,7 +24,7 @@
         // you clicked on (like starting to edit something, where the edit button
         // changes into the form). When that happens, we can no longer determine
         // that you clicked in a toggle, so we err on the side of caution.
-        if(!$.contains($document[0].documentElement, e.target)){
+        if(!$document[0].documentElement.contains(e.target)){
           return;
         }
 
