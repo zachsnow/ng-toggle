@@ -32,11 +32,11 @@
         $rootScope.$apply(function(){
           var toggle;
           for(var key in service.toggles){
+            console.info('closing', key)
             toggle = service.toggles[key];
-            if(!toggle.autoClose){
-              return;
+            if(toggle.autoClose){
+              toggle.state = false
             }
-            toggle.state = false;
           }
         });
       });

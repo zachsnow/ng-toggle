@@ -3,6 +3,11 @@
     <script type="text/javascript" src="angular.js"></script>
     <script type="text/javascript" src="example.js"></script>
     <script type="text/javascript" src="../../src/toggles.js"></script>
+    <style>
+      [ng-toggle].toggled.ng-toggle-hide {
+        display: none;
+      }
+    </style>
   </head>
   <body ng-app="example" ng-controller="ExampleCtrl">
     <h1>Simple Example</h1>
@@ -60,5 +65,12 @@
     <div ng-toggled="default">
       Hey I'm open! I'm open!
     </div>
+
+    <h1>Auto-hiding</h1>
+    <button ng-toggle="hiding" class="ng-toggle-hide">Open Sesame</button>
+    <div ng-toggled="hiding">
+      Now you see me, <button ng-toggle="hiding">Now you don't.</button>
+    </div>
+
   </body>
 </html>
