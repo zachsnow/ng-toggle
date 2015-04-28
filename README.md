@@ -68,3 +68,13 @@ with the toggle will be automatically associated with the group as well.
 To see a few different examples in action, check out this
 [demo](http://plnkr.co/edit/kMH2lYJ20LqNjgqwJ6W6?p=preview). Or see
 `/test/example/index.html` in this repository.
+
+## Testing
+
+We has some.
+
+```
+  $ npm install
+  $ bower install
+  $ gulp test
+```
