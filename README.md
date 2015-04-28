@@ -97,7 +97,7 @@ can use the following CSS:
 ### Examples
 
 To see a few different examples in action, check out this
-[demo](http://plnkr.co/edit/kMH2lYJ20LqNjgqwJ6W6?p=preview). Or see
+[demo](http://plnkr.co/edit/bTBGAP5X835jKGUTEYlK?p=preview). Or see
 `/test/example/index.html` in this repository.
 
 ## Testing
