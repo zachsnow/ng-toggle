@@ -35,12 +35,30 @@
       </div>
     </div>
 
+    <h1>Uncloseable Group Example</h1>
+    <div ng-repeat="option in options">
+      <button ng-toggle="uncloseable-option-{{ option.name }}" ng-toggle-group="options" ng-toggle-closeable="false">
+        {{ option.name }}
+      </button>
+    </div>
+    <div ng-repeat="option in options">
+      <div ng-toggled="uncloseable-option-{{ option.name }}">
+        {{ option.content }}
+      </div>
+    </div>
+
     <h1>Autoclose Example</h1>
     <button ng-toggle="auto-close" ng-toggle-auto-close>
       Auto-closing toggle.
     </button>
     <div ng-toggled="auto-close">
       Click off me to close.
+    </div>
+
+    <h1>Default Example</h1>
+    <button ng-toggle="default" ng-toggle-default>Click to close</button>
+    <div ng-toggled="default">
+      Hey I'm open! I'm open!
     </div>
   </body>
 </html>
