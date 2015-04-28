@@ -18,7 +18,7 @@
           $node = angular.element($node.parent());
         }
         
-        // Also don't let clicks on things that aren't in the DOM autoclose.
+        // Also don't let clicks on things that aren't in the DOM auto-close.
         // This fixes issues where you click on something, and its click handler
         // fires before the click reaches the <html /> and removes the thing
         // you clicked on (like starting to edit something, where the edit button
@@ -33,9 +33,10 @@
           var toggle;
           for(var key in service.toggles){
             toggle = service.toggles[key];
-            if(toggle.autoClose){
-              toggle.state = false;
+            if(!toggle.autoClose){
+              return;
             }
+            toggle.state = false;
           }
         });
       });
@@ -52,10 +53,18 @@
             return;
           }
 
+          // Nicer defaults.
+          var closeable = options.closeable !== undefined ? !!options.closeable : true;
+          if(options.autoClose && !closeable){
+            throw new Error('toggles: toggle cannot be auto-close without being closeable: ' + name);
+          }
+          var defaultState = closeable ? !!options.defaultState :  true;
+
           toggle = {
-            autoClose: options.autoClose || false,
-            state: options.defaultState || false,
+            state: defaultState,
             group: options.group || null,
+            autoClose: options.autoClose || false,
+            closeable: closeable,
             count: 1
           };
           service.toggles[name] = toggle;
@@ -103,6 +112,12 @@
           // If you pass a value use that as the new state, otherwise
           // just invert the current state.
           value = arguments.length > 1 ? !!value : !toggle.state;
+
+          // Can't close uncloseable toggles.
+          if(!toggle.closeable){
+            value = true;
+          }
+
           toggle.state = value;
         },
         
@@ -125,14 +140,14 @@
     '$rootScope',
     'toggles',
     function($interpolate, $parse, $rootScope, toggles){
-      var isSetFn = function(attrs, name){
-        if(!attrs[name]){
+      var isSetFn = function(value, always){
+        if(!value){
           return function(){
-            return attrs[name] === '';
+            return always || (value === '');
           };
         }
         else {
-          return $parse(attrs[name])
+          return $parse(value);
         }
       };
 
@@ -140,10 +155,10 @@
         restrict: 'A',
         compile: function($element, $attrs){
           var nameFn = $interpolate($attrs.ngToggle || '');
-          var defaultFn = $parse($attrs.ngToggleDefault);
           var groupFn = $interpolate($attrs.ngToggleGroup || '');
-          var autoCloseFn = isSetFn($attrs, 'ngToggleAutoClose');
-
+          var defaultFn = isSetFn($attrs.ngToggleDefault);
+          var autoCloseFn = isSetFn($attrs.ngToggleAutoClose);
+          var closeableFn = isSetFn($attrs.ngToggleCloseable, true);
 
           return function(scope, element, attrs){
             var name = nameFn(scope);
@@ -154,16 +169,18 @@
             var defaultState = defaultFn(scope) || false;
             var group = groupFn(scope) || '';
             var autoClose = autoCloseFn(scope);
+            var closeable = closeableFn(scope);
 
             // Create the toggle.
             toggles.create(name, {
               autoClose: autoClose,
               defaultState: defaultState,
-              group: group
+              group: group,
+              closeable: closeable
             });
 
             // Bind the event to toggle.
-            element.on('click', function(e){
+            element.on('click', function(){
               scope.$apply(function(){
                 toggles.toggle(name);
               });
@@ -197,6 +214,7 @@
         compile: function($element, $attrs, $transclude){
           var nameFn = $interpolate($attrs.ngToggled);
 
+
           return function(scope, element, attrs, ctrl){
             var childElement, childScope;
             var name = nameFn(scope);
@@ -229,11 +247,12 @@
   ]);
 
   module.directive('ngToggledShow', [
+    '$interpolate',
     'toggles',
-    function(toggles){
+    function($interpolate, toggles){
       return {
         compile: function($element, $attrs){
-          var nameFn = $interpolate($attrs.ngToggled);
+          var nameFn = $interpolate($attrs.ngToggledShow);
           return function(scope, element){
             var name = nameFn(scope);
             scope.$watch(function ngToggledShowWatch(){
