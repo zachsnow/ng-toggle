@@ -25,15 +25,22 @@ Simple micro-interactions for AngularJS.
 ## Usage
 
 First, you introduce new toggles (the part you click on or touch
-to open or close another section) via `ng-toggle`.  It has several forms,
-the simplest of which introduces a toggle named by a static string:
+to open or close another section) via `ng-toggle`.  Then you add
+toggleds (the part that is supposed to be shown or hidden) via
+`ng-toggled`. Then you're pretty much done.
+
+Toggles have several forms, the simplest of which introduces a toggle
+named by a static or interpolated string:
 
 ```html
   <a ng-toggle="a-simple-toggle">Click me!</a>
   <div ng-toggled="a-simple-toggle">
-    Hey neat content brah.
+    Hey neat content brah!
   </div>
 ```
+
+When "Click me!" is clicked, "Hey neat content brah!" is shown; click it again
+and the content disappears.  That's about the long and the short of it.
 
 ### Auto-close
 
