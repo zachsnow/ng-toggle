@@ -266,7 +266,6 @@
       var el = angular.element('<div><span">Another thing</span><div ng-toggle="foo" ng-toggle-auto-close>Foo</div><div ng-toggled="foo">Foo content.</div></div>');
       var scope = $rootScope.$new();
       el = $compile(el)(scope);
-      $document.append(el);
 
       scope.$apply();
 
@@ -275,7 +274,7 @@
       expect(text(el, '[ng-toggled]')).toBe('Foo content.');
 
       // Click something else, verify the toggle closes.
-      click(el, 'span');
+      $document.triggerHandler('click');
       expect(text(el, '[ng-toggled]')).toBe('');
     }));
 
