@@ -56,18 +56,16 @@
   });
 
   gulp.task('compress', function() {
-    return gulp.src(['.tmp/**/*.js'])
+    return gulp.src(['src/**/*.js'])
       .pipe($.uglify())
       .pipe($.concat('toggles.min.js'))
-      .pipe(gulp.dest('./'))
-      .pipe($.size());
+      .pipe(gulp.dest('./'));
   });
 
   gulp.task('concat', function() {
-    return gulp.src(['.tmp/**/*.js'])
+    return gulp.src(['src/**/*.js'])
       .pipe($.concat('toggles.js'))
-      .pipe(gulp.dest('./'))
-      .pipe($.size());
+      .pipe(gulp.dest('./'));
   });
 
   gulp.task('default', ['build']);
