@@ -1,3 +1,8 @@
+/**
+ * @license ng-toggle v0.1.0
+ * (c) 2015 Zach Snow http://zachsnow.com
+ * License: MIT
+ */
 (function(){
   var module = angular.module('toggles', []);
   
